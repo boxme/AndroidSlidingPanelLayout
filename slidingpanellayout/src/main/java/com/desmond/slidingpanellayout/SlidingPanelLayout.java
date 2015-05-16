@@ -127,7 +127,7 @@ public class SlidingPanelLayout extends ViewGroup {
     private boolean mIsSlidingUp;
 
     /**
-     * Panel overlays the windows instead of putting it underneath it.
+     * Panel overlays the windows instead of putting the windows underneath it.
      */
     private boolean mOverlayContent = DEFAULT_OVERLAY_FLAG;
 
@@ -281,6 +281,11 @@ public class SlidingPanelLayout extends ViewGroup {
     public SlidingPanelLayout(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
 
+        /**
+         * A View is usually in edit mode when displayed within a developer tool. For instance, if
+         * this View is being drawn by a visual user interface builder, this method
+         * should return true.
+         */
         if(isInEditMode()) {
             mShadowDrawable = null;
             mDragHelper = null;
@@ -353,7 +358,7 @@ public class SlidingPanelLayout extends ViewGroup {
     protected void onFinishInflate() {
         super.onFinishInflate();
         if (mDragViewResId != -1) {
-            // TODO
+            setDragView(findViewById(mDragViewResId));
         }
     }
 
@@ -443,7 +448,7 @@ public class SlidingPanelLayout extends ViewGroup {
     }
 
     /**
-     * @return The current paralax offset
+     * @return The current parallax offset
      */
     public int getCurrentParallaxOffset() {
         // Clamp slide offset at zero for parallax computation;
@@ -519,7 +524,7 @@ public class SlidingPanelLayout extends ViewGroup {
     }
 
     /**
-     * Set the draggable view portion. Use to null, to allow the whole panel to be draggable
+     * Set the draggable view portion. Use null, to allow the whole panel to be draggable
      *
      * @param dragViewResId The resource ID of the new drag view
      */
@@ -593,14 +598,21 @@ public class SlidingPanelLayout extends ViewGroup {
         return false;
     }
 
+    /**
+     * Called by a parent to request that a child update its values for mScrollX and mScrollY
+     * if necessary. This will typically be done if the child is animating a scroll using
+     * a Scroller object.
+     */
     @Override
     public void computeScroll() {
+        // DragHelper.continueSettling returns true if it's settling the view for the time being
         if (mDragHelper != null && mDragHelper.continueSettling(true)) {
             if (!isEnabled()) {
                 mDragHelper.abort();
                 return;
             }
 
+            // Invalidate this view for the next frame
             ViewCompat.postInvalidateOnAnimation(this);
         }
     }
@@ -644,6 +656,10 @@ public class SlidingPanelLayout extends ViewGroup {
         sendAccessibilityEvent(AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
     }
 
+    /**
+     * Set the visibility of the main view depending on the sliding view as the
+     * sliding view will be on top of the main view
+     */
     void updateObscuredViewVisibility() {
         if (getChildCount() == 0) return;
 
@@ -665,6 +681,7 @@ public class SlidingPanelLayout extends ViewGroup {
             left = right = top = bottom = 0;
         }
 
+        // The first child is the main view
         View child = getChildAt(0);
         final int clampedChildLeft = Math.max(leftBound, child.getLeft());
         final int clampedChildTop = Math.max(topBound, child.getTop());
@@ -681,6 +698,9 @@ public class SlidingPanelLayout extends ViewGroup {
         child.setVisibility(vis);
     }
 
+    /**
+     * Make all child views invisible
+     */
     void setAllChildrenVisible() {
         int childCount = getChildCount();
         for (int i = 0; i < childCount; i++) {
@@ -718,7 +738,7 @@ public class SlidingPanelLayout extends ViewGroup {
 
     /**
      * Change panel state to the given state with
-     * @param state - new panel state
+     * @param state new panel state
      */
     public void setPanelState(PanelState state) {
         if (state == null || state == PanelState.DRAGGING) {
@@ -727,7 +747,9 @@ public class SlidingPanelLayout extends ViewGroup {
         if (!isEnabled()
                 || (!mFirstLayout && mSlideableView == null)
                 || state == mSlideState
-                || mSlideState == PanelState.DRAGGING) return;
+                || mSlideState == PanelState.DRAGGING) {
+            return;
+        }
 
         if (mFirstLayout) {
             mSlideState = state;
@@ -776,6 +798,7 @@ public class SlidingPanelLayout extends ViewGroup {
         mMainView = getChildAt(0);
         mSlideableView = getChildAt(1);
         if (mDragView == null) {
+            // Set the entire sliding view to be draggable
             setDragView(mSlideableView);
         }
 
@@ -998,19 +1021,21 @@ public class SlidingPanelLayout extends ViewGroup {
                 screenY >= viewLocation[1] && screenY < viewLocation[1] + mDragView.getHeight();
     }
 
-    /*
+    /**
      * Computes the top position of the panel based on the slide offset.
+     * @param slideOffset 0 when the panel is collapsed
      */
     private int computePanelTopPosition(float slideOffset) {
         int slidingViewHeight = mSlideableView != null ? mSlideableView.getMeasuredHeight() : 0;
         int slidePixelOffset = (int) (slideOffset * mSlideRange);
+
         // Compute the top of the panel if its collapsed
         return mIsSlidingUp
                 ? getMeasuredHeight() - getPaddingBottom() - mPanelHeight - slidePixelOffset
                 : getPaddingTop() - slidingViewHeight + mPanelHeight + slidePixelOffset;
     }
 
-    /*
+    /**
      * Computes the slide offset based on the top position of the panel
      */
     private float computeSlideOffset(int topPosition) {
