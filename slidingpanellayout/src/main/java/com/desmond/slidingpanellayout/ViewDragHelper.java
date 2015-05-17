@@ -6,6 +6,7 @@ import android.support.v4.view.MotionEventCompat;
 import android.support.v4.view.VelocityTrackerCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.ScrollerCompat;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
@@ -553,6 +554,7 @@ public class ViewDragHelper {
         final int dx = finalLeft - startLeft;
         final int dy = finalTop - startTop;
 
+        Log.d(TAG, "settle captured view dy: " + dy);
         if (dx == 0 && dy == 0) {
             // Nothing to do. Send callbacks, be done.
             mScroller.abortAnimation();
@@ -715,6 +717,7 @@ public class ViewDragHelper {
                 keepGoing = mScroller.isFinished();
             }
 
+            // keepGoing true is when there's more to scroll to
             if (!keepGoing) {
                 if (deferCallbacks) {
                     mParentView.post(mSetIdleRunnable);
@@ -735,6 +738,7 @@ public class ViewDragHelper {
      */
     private void dispatchViewReleased(float xvel, float yvel) {
         mReleaseInProgress = true;
+        // Get callback to calculate the final position and then passing it to settleCapturedViewAt
         mCallback.onViewReleased(mCapturedView, xvel, yvel);
         mReleaseInProgress = false;
 
@@ -1344,30 +1348,35 @@ public class ViewDragHelper {
 
     private void releaseViewForPointerUp() {
         mVelocityTracker.computeCurrentVelocity(1000, mMaxVelocity);
+
         final float xvel = clampMag(
                 VelocityTrackerCompat.getXVelocity(mVelocityTracker, mActivePointerId),
                 mMinVelocity, mMaxVelocity);
+
         final float yvel = clampMag(
                 VelocityTrackerCompat.getYVelocity(mVelocityTracker, mActivePointerId),
                 mMinVelocity, mMaxVelocity);
+
         dispatchViewReleased(xvel, yvel);
     }
 
-    private void dragTo(int left, int top, int dx, int dy) {
-        int clampedX = left;
-        int clampedY = top;
+    private void dragTo(int newLeft, int newTop, int dx, int dy) {
+        int clampedX = newLeft;
+        int clampedY = newTop;
         final int oldLeft = mCapturedView.getLeft();
         final int oldTop = mCapturedView.getTop();
 
         // Drag horizontally
         if (dx != 0) {
-            clampedX = mCallback.clampViewPositionHorizontal(mCapturedView, left, dx);
+            clampedX = mCallback.clampViewPositionHorizontal(mCapturedView, newLeft, dx);
             mCapturedView.offsetLeftAndRight(clampedX - oldLeft);
         }
 
         // Drag vertically
         if (dy != 0) {
-            clampedY = mCallback.clampViewPositionVertical(mCapturedView, top, dy);
+            clampedY = mCallback.clampViewPositionVertical(mCapturedView, newTop, dy);
+//            Log.d(TAG, "dy: " + dy + " clampedY: " + clampedY + " oldTop: " + oldTop);
+            // Drag the sliding view
             mCapturedView.offsetTopAndBottom(clampedY - oldTop);
         }
 

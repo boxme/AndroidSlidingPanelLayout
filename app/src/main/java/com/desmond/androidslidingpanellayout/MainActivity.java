@@ -35,9 +35,12 @@ public class MainActivity extends AppCompatActivity {
 
         TextView t = (TextView) findViewById(R.id.name);
         t.setText(Html.fromHtml(getString(R.string.hello)));
+
         Button f = (Button) findViewById(R.id.follow);
         f.setText(Html.fromHtml(getString(R.string.follow)));
+
         f.setMovementMethod(LinkMovementMethod.getInstance());
+
         f.setOnClickListener(new View.OnClickListener() {
 
             @Override

@@ -1062,7 +1062,7 @@ public class SlidingPanelLayout extends ViewGroup {
      */
     private float computeSlideOffset(int topPosition) {
         // Compute the panel top position if the panel is collapsed (offset 0)
-        final int topBoundCollapsed = computePanelTopPosition(0);
+        final int topBoundCollapsed = computePanelTopPosition(0.0f);
 
         // Determine the new slide offset based on the collapsed top position and the new required
         // top position
@@ -1084,7 +1084,7 @@ public class SlidingPanelLayout extends ViewGroup {
     }
 
     /**
-     * Drag the sliding view
+     * Drag the main view, which is behind the dragging view
      * @param newTop new position of the top after dragging
      */
     private void onPanelDragged(int newTop) {
@@ -1307,7 +1307,6 @@ public class SlidingPanelLayout extends ViewGroup {
 
         @Override
         public void onViewDragStateChanged(int state) {
-
             // Ensure that drag state is idle
             if (mDragHelper.getViewDragState() == ViewDragHelper.STATE_IDLE) {
                 mSlideOffset = computeSlideOffset(mSlideableView.getTop());
@@ -1386,7 +1385,7 @@ public class SlidingPanelLayout extends ViewGroup {
 
         @Override
         public int clampViewPositionVertical(View child, int top, int dy) {
-            final int collapsedTop = computePanelTopPosition(0.f);
+            final int collapsedTop = computePanelTopPosition(0.0f);
             final int expandedTop = computePanelTopPosition(1.0f);
             if (mIsSlidingUp) {
                 return Math.min(Math.max(top, expandedTop), collapsedTop);

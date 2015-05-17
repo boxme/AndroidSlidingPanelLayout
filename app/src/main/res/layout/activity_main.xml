@@ -10,9 +10,9 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:gravity="bottom"
-        app:panelHeight="200dp"
+        app:panelHeight="64dp"
         app:shadowHeight="4dp"
-        app:parallaxOffset="100dp"
+        app:parallaxOffset="0dp"
         app:dragView="@+id/dragView"
         app:overlay="false">
 
