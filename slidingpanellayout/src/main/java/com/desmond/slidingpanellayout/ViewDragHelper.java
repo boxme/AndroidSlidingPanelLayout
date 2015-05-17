@@ -1090,7 +1090,6 @@ public class ViewDragHelper {
                     // We're still tracking a captured view. If the same view is under this
                     // point, we'll swap to controlling it with this pointer instead.
                     // (This will still work if we're "catching" a settling view.)
-
                     tryCaptureViewForDrag(mCapturedView, pointerId);
                 }
                 break;
@@ -1098,6 +1097,7 @@ public class ViewDragHelper {
 
             case MotionEvent.ACTION_MOVE: {
                 if (mDragState == STATE_DRAGGING) {
+                    // Starts dragging
                     final int index = MotionEventCompat.findPointerIndex(ev, mActivePointerId);
                     final float x = MotionEventCompat.getX(ev, index);
                     final float y = MotionEventCompat.getY(ev, index);
@@ -1111,8 +1111,7 @@ public class ViewDragHelper {
                     // Check to see if any pointer is now over a draggable view.
                     final int pointerCount = MotionEventCompat.getPointerCount(ev);
                     for (int i = 0; i < pointerCount; i++) {
-                        final int pointerId = MotionEventCompat.getPointerId(ev, i)
-                                ;
+                        final int pointerId = MotionEventCompat.getPointerId(ev, i);
                         final float x = MotionEventCompat.getX(ev, i);
                         final float y = MotionEventCompat.getY(ev, i);
                         final float dx = x - mInitialMotionX[pointerId];
@@ -1125,6 +1124,7 @@ public class ViewDragHelper {
                         }
 
                         final View toCapture = findTopChildUnder((int) x, (int) y);
+                        // Might change mDragState to STATE_DRAGGING
                         if (checkTouchSlop(toCapture, dx, dy) &&
                                 tryCaptureViewForDrag(toCapture, pointerId)) {
                             break;
@@ -1358,10 +1358,14 @@ public class ViewDragHelper {
         int clampedY = top;
         final int oldLeft = mCapturedView.getLeft();
         final int oldTop = mCapturedView.getTop();
+
+        // Drag horizontally
         if (dx != 0) {
             clampedX = mCallback.clampViewPositionHorizontal(mCapturedView, left, dx);
             mCapturedView.offsetLeftAndRight(clampedX - oldLeft);
         }
+
+        // Drag vertically
         if (dy != 0) {
             clampedY = mCallback.clampViewPositionVertical(mCapturedView, top, dy);
             mCapturedView.offsetTopAndBottom(clampedY - oldTop);

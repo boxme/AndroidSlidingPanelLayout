@@ -1083,12 +1083,17 @@ public class SlidingPanelLayout extends ViewGroup {
         }
     }
 
+    /**
+     * Drag the sliding view
+     * @param newTop new position of the top after dragging
+     */
     private void onPanelDragged(int newTop) {
         mLastNotDraggingSlideState = mSlideState;
         mSlideState = PanelState.DRAGGING;
 
         // Recompute the slide offset based on the new top position
         mSlideOffset = computeSlideOffset(newTop);
+
         applyParallaxForCurrentSlideOffset();
 
         // Dispatch the slide event
@@ -1100,7 +1105,7 @@ public class SlidingPanelLayout extends ViewGroup {
 
         int defaultHeight = getHeight() - getPaddingBottom() - getPaddingTop() - mPanelHeight;
 
-        // When the main view is collapsed
+        // When the main view is going to be collapsed/hidden
         if (mSlideOffset <= 0 && !mOverlayContent) {
             // expand the main view
             lp.height = mIsSlidingUp
