@@ -952,6 +952,11 @@ public class SlidingPanelLayout extends ViewGroup {
         mIsUsingDragViewTouchEvents = enabled;
     }
 
+    /**
+     * The first place where the touch event will be sent to before going to the children
+     * @param ev
+     * @return true if the motion event is being intercepted and stopped from going to the children
+     */
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
         final int action = MotionEventCompat.getActionMasked(ev);
@@ -997,9 +1002,16 @@ public class SlidingPanelLayout extends ViewGroup {
             }
         }
 
+        // If the dragging is going to be started, this will return true
         return mDragHelper.shouldInterceptTouchEvent(ev);
     }
 
+    /**
+     * Once {@link #onInterceptTouchEvent(MotionEvent)} returns true, all following touch events
+     * will be delivered to here.
+     * @param ev
+     * @return
+     */
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
         if (!isEnabled() || !isTouchEnabled()) {
@@ -1009,14 +1021,24 @@ public class SlidingPanelLayout extends ViewGroup {
         return true;
     }
 
+    /**
+     *
+     * @param x
+     * @param y
+     * @return true if x and y coordinates are on the dragview
+     */
     private boolean isDragViewUnder(int x, int y) {
         if (mDragView == null) return false;
+
         int[] viewLocation = new int[2];
         mDragView.getLocationOnScreen(viewLocation);
+
         int[] parentLocation = new int[2];
         this.getLocationOnScreen(parentLocation);
+
         int screenX = parentLocation[0] + x;
         int screenY = parentLocation[1] + y;
+
         return screenX >= viewLocation[0] && screenX < viewLocation[0] + mDragView.getWidth() &&
                 screenY >= viewLocation[1] && screenY < viewLocation[1] + mDragView.getHeight();
     }
@@ -1064,19 +1086,26 @@ public class SlidingPanelLayout extends ViewGroup {
     private void onPanelDragged(int newTop) {
         mLastNotDraggingSlideState = mSlideState;
         mSlideState = PanelState.DRAGGING;
+
         // Recompute the slide offset based on the new top position
         mSlideOffset = computeSlideOffset(newTop);
         applyParallaxForCurrentSlideOffset();
+
         // Dispatch the slide event
         dispatchOnPanelSlide(mSlideableView);
+
         // If the slide offset is negative, and overlay is not on, we need to increase the
         // height of the main content
-        LayoutParams lp = (LayoutParams)mMainView.getLayoutParams();
+        LayoutParams lp = (LayoutParams) mMainView.getLayoutParams();
+
         int defaultHeight = getHeight() - getPaddingBottom() - getPaddingTop() - mPanelHeight;
 
+        // When the main view is collapsed
         if (mSlideOffset <= 0 && !mOverlayContent) {
             // expand the main view
-            lp.height = mIsSlidingUp ? (newTop - getPaddingBottom()) : (getHeight() - getPaddingBottom() - mSlideableView.getMeasuredHeight() - newTop);
+            lp.height = mIsSlidingUp
+                    ? (newTop - getPaddingBottom())
+                    : (getHeight() - getPaddingBottom() - mSlideableView.getMeasuredHeight() - newTop);
             mMainView.requestLayout();
         } else if (lp.height != defaultHeight && !mOverlayContent) {
             lp.height = defaultHeight;
@@ -1087,9 +1116,12 @@ public class SlidingPanelLayout extends ViewGroup {
     @Override
     protected boolean drawChild(Canvas canvas, View child, long drawingTime) {
         boolean result;
-        final int save = canvas.save(Canvas.CLIP_SAVE_FLAG);
+//        final int save = canvas.save(Canvas.CLIP_SAVE_FLAG);
+        canvas.save();
 
-        if (mSlideableView != child) { // if main view
+        // If the drawing is on the main view
+        if (mSlideableView != child) {
+            // if main view
             // Clip against the slider; no sense drawing what will immediately be covered,
             // Unless the panel is set to overlay content
             canvas.getClipBounds(mTmpRect);
@@ -1117,7 +1149,8 @@ public class SlidingPanelLayout extends ViewGroup {
             result = super.drawChild(canvas, child, drawingTime);
         }
 
-        canvas.restoreToCount(save);
+//        canvas.restoreToCount(save);
+        canvas.restore();
 
         return result;
     }
@@ -1139,7 +1172,9 @@ public class SlidingPanelLayout extends ViewGroup {
                 bottom = mSlideableView.getBottom() + mShadowHeight;
             }
             final int left = mSlideableView.getLeft();
+            // Set the bound where the drawable will be drawn on the canvas
             mShadowDrawable.setBounds(left, top, right, bottom);
+            // Draw the shadow on the canvas
             mShadowDrawable.draw(c);
         }
     }
@@ -1267,6 +1302,8 @@ public class SlidingPanelLayout extends ViewGroup {
 
         @Override
         public void onViewDragStateChanged(int state) {
+
+            // Ensure that drag state is idle
             if (mDragHelper.getViewDragState() == ViewDragHelper.STATE_IDLE) {
                 mSlideOffset = computeSlideOffset(mSlideableView.getTop());
                 applyParallaxForCurrentSlideOffset();

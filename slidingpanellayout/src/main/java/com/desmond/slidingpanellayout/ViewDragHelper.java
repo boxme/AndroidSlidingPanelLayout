@@ -436,7 +436,9 @@ public class ViewDragHelper {
 
         mCapturedView = childView;
         mActivePointerId = activePointerId;
+
         mCallback.onViewCaptured(childView, activePointerId);
+
         setDragState(STATE_DRAGGING);
     }
 
@@ -853,18 +855,21 @@ public class ViewDragHelper {
      * This will put us into the "dragging" state. If we've already captured this view with
      * this pointer this method will immediately return true without consulting the callback.
      *
-     * @param toCapture View to capture
+     * @param toCaptureView View to capture
      * @param pointerId Pointer to capture with
      * @return true if capture was successful
      */
-    boolean tryCaptureViewForDrag(View toCapture, int pointerId) {
-        if (toCapture == mCapturedView && mActivePointerId == pointerId) {
+    boolean tryCaptureViewForDrag(View toCaptureView, int pointerId) {
+        if (toCaptureView == mCapturedView && mActivePointerId == pointerId) {
             // Already done!
             return true;
         }
-        if (toCapture != null && mCallback.tryCaptureView(toCapture, pointerId)) {
+
+        // Ensure that the toCaptureView is the sliding view of the panel layout
+        if (toCaptureView != null && mCallback.tryCaptureView(toCaptureView, pointerId)) {
             mActivePointerId = pointerId;
-            captureChildView(toCapture, pointerId);
+            // Capture the view and change the dragging status to STATE_DRAGGING
+            captureChildView(toCaptureView, pointerId);
             return true;
         }
         return false;
@@ -933,13 +938,14 @@ public class ViewDragHelper {
                 final float x = ev.getX();
                 final float y = ev.getY();
                 final int pointerId = MotionEventCompat.getPointerId(ev, 0);
+
                 saveInitialMotion(x, y, pointerId);
 
-                final View toCapture = findTopChildUnder((int) x, (int) y);
+                final View toCaptureView = findTopChildUnder((int) x, (int) y);
 
                 // Catch a settling view if possible.
-                if (toCapture == mCapturedView && mDragState == STATE_SETTLING) {
-                    tryCaptureViewForDrag(toCapture, pointerId);
+                if (toCaptureView == mCapturedView && mDragState == STATE_SETTLING) {
+                    tryCaptureViewForDrag(toCaptureView, pointerId);
                 }
 
                 final int edgesTouched = mInitialEdgesTouched[pointerId];
@@ -964,9 +970,9 @@ public class ViewDragHelper {
                     }
                 } else if (mDragState == STATE_SETTLING) {
                     // Catch a settling view if possible.
-                    final View toCapture = findTopChildUnder((int) x, (int) y);
-                    if (toCapture == mCapturedView) {
-                        tryCaptureViewForDrag(toCapture, pointerId);
+                    final View toCaptureView = findTopChildUnder((int) x, (int) y);
+                    if (toCaptureView == mCapturedView) {
+                        tryCaptureViewForDrag(toCaptureView, pointerId);
                     }
                 }
                 break;
@@ -977,15 +983,18 @@ public class ViewDragHelper {
                 final int pointerCount = MotionEventCompat.getPointerCount(ev);
                 for (int i = 0; i < pointerCount && mInitialMotionX != null && mInitialMotionY != null; i++) {
                     final int pointerId = MotionEventCompat.getPointerId(ev, i);
+
                     if (pointerId >= mInitialMotionX.length || pointerId >= mInitialMotionY.length) {
                         continue;
                     }
+
                     final float x = MotionEventCompat.getX(ev, i);
                     final float y = MotionEventCompat.getY(ev, i);
                     final float dx = x - mInitialMotionX[pointerId];
                     final float dy = y - mInitialMotionY[pointerId];
 
                     reportNewEdgeDrags(dx, dy, pointerId);
+
                     if (mDragState == STATE_DRAGGING) {
                         // Callback might have started an edge drag
                         break;
